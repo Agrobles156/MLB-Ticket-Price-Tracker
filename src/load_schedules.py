@@ -10,28 +10,47 @@ CSV_FILE = PROJECT_ROOT / "Data" / "processed" / "mlb_schedule_2027.csv"
 DATABASE_FILE = PROJECT_ROOT / "Data" / "mlb_tickets.db"
 SCHEMA_FILE = PROJECT_ROOT / "SQL" / "schema.sql"
 
-# Read the processed dataset
-df = pd.read_csv(CSV_FILE)
 
-# Connect to SQLite
-conn = sqlite3.connect(DATABASE_FILE)
+def load_schedule():
+    # Read transformed schedule data
+    df = pd.read_csv(CSV_FILE)
 
-try:
-    # Create tables from SQL schema
-    with open(SCHEMA_FILE, "r", encoding="utf-8") as file:
-        conn.executescript(file.read())
+    # Connect to SQLite database
+    with sqlite3.connect(DATABASE_FILE) as conn:
 
-    # Load game records into the database
-    df.to_sql(
-        "games",
-        conn,
-        if_exists="append",
-        index=False
-    )
+        # Create tables if they don't exist
+        with open(SCHEMA_FILE, "r", encoding="utf-8") as file:
+            conn.executescript(file.read())
 
-    conn.commit()
+        # Insert new games or update existing games
+        query = """
+        INSERT INTO games (
+            game_id,
+            game_date,
+            home_team_id,
+            home_team,
+            away_team_id,
+            away_team,
+            game_status
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?)
 
-    print(f"Successfully loaded {len(df)} games into SQLite.")
+        ON CONFLICT(game_id) DO UPDATE SET
+            game_date = excluded.game_date,
+            home_team_id = excluded.home_team_id,
+            home_team = excluded.home_team,
+            away_team_id = excluded.away_team_id,
+            away_team = excluded.away_team,
+            game_status = excluded.game_status;
+        """
 
-finally:
-    conn.close()
+        records = list(df.itertuples(index=False, name=None))
+
+        conn.executemany(query, records)
+        conn.commit()
+
+        print(f"Successfully processed {len(records)} games.")
+
+
+if __name__ == "__main__":
+    load_schedule()
