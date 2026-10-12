@@ -1,5 +1,19 @@
+# Python
 .venv/
 __pycache__/
-.pytest_cache/ 
-*.db
+*.pyc
+
+# Environment variables
 .env
+.env.*
+
+# Local databases
+*.db
+*.db-journal
+
+# Downloaded and processed data
+Data/raw/
+Data/processed/
+
+# Logs
+*.log

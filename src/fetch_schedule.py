@@ -24,7 +24,7 @@ data = response.json()
 
 # Save the raw API response
 project_root = Path(__file__).resolve().parent.parent
-output_path = project_root / "data" / "raw" / "mlb_schedule_2027.json"
+output_path = project_root / "Data" / "raw" / "mlb_schedule_2027.json"
 output_path.parent.mkdir(parents=True, exist_ok=True)
 
 with open(output_path, "w", encoding="utf-8") as file:
